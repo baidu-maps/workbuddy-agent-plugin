@@ -7,7 +7,7 @@
   "author": "百度地图开放平台",
   "icon": "icon.png",
   "category": "Code",
-  "exampleQueries": [
+  "examples_zh": [
     "帮我找西湖附近适合带孩子的餐厅",
     "写一个 BMapGL 页面显示多个 Marker",
     "用 Node.js 调用百度地图驾车路线规划接口"
