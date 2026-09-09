@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "baidu-maps-docs": {
+      "type": "stdio",
+      "command": "node",
+      "args": ["./bin/docs-mcp-proxy.mjs"],
+      "timeout": 30000
+    }
+  }
+}

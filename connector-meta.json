@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "name": "baidu-map",
+  "displayName": "百度地图",
+  "version": "1.3.0",
+  "description": "百度地图官方插件。支持地点搜索、出行路线规划、地址识别、天气查询，满足日常出行需求；同时可解答地图开发中的问题，为开发者提供集成方案、功能用法、开发相关指引。",
+  "author": "百度地图开放平台",
+  "icon": "icon.png",
+  "category": "Code",
+  "exampleQueries": [
+    "帮我找西湖附近适合带孩子的餐厅",
+    "写一个 BMapGL 页面显示多个 Marker",
+    "用 Node.js 调用百度地图驾车路线规划接口"
+  ]
+}
