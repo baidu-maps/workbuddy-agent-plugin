@@ -3,7 +3,7 @@
     "baidu-maps-docs": {
       "type": "stdio",
       "command": "node",
-      "args": ["./bin/docs-mcp-proxy.mjs"],
+      "args": ["${CLAUDE_PLUGIN_ROOT}/bin/docs-mcp-proxy.mjs"],
       "timeout": 30000
     }
   }

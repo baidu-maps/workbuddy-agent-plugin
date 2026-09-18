@@ -53,6 +53,25 @@ function resolveAk() {
     encoding: 'utf8',
     timeout: 20_000,
   });
+
+  // Happy path: if the CLI exited 0, try to extract a usable AK from stdout
+  // even if it also printed an upgrade banner to stderr. The previous version
+  // bailed out on the banner first, which made docs retrieval fail any time
+  // a routine upgrade notice was emitted, regardless of whether the AK call
+  // itself succeeded.
+  if (res.status === 0) {
+    try {
+      const parsed = JSON.parse(res.stdout);
+      const list = Array.isArray(parsed?.data) ? parsed.data : [];
+      const usable = list.filter((a) => a?.ak && a?.status === '正常');
+      const picked = usable.find((a) => a.app_type === '服务端') || usable[0];
+      if (picked) return picked.ak;
+    } catch {
+      // stdout wasn't valid JSON (e.g. the upgrade banner landed in stdout);
+      // fall through to the upgrade-prompt / generic-error branches below.
+    }
+  }
+
   const updateOutput = [res.stderr, res.stdout]
     .filter(Boolean)
     .find((output) => output.includes('发现新版本'));
@@ -77,22 +96,10 @@ function resolveAk() {
         `Plugin MCP 子进程可能不会继承宿主的 AK 环境变量。`
     );
   }
-  let parsed;
-  try {
-    parsed = JSON.parse(res.stdout);
-  } catch {
-    throw new Error('bmap-cli ak list 输出不是合法 JSON，无法解析 AK。');
-  }
-  const list = Array.isArray(parsed?.data) ? parsed.data : [];
-  const usable = list.filter((a) => a?.ak && a?.status === '正常');
-  const picked =
-    usable.find((a) => a.app_type === '服务端') || usable[0];
-  if (!picked) {
-    throw new Error(
-      '当前账号下没有可用 AK。请在百度地图开放平台创建一个服务端 AK 后重试。'
-    );
-  }
-  return picked.ak;
+  // status was 0 but stdout was either unparseable or contained no usable AK.
+  throw new Error(
+    '当前账号下没有可用 AK。请在百度地图开放平台创建一个服务端 AK 后重试。'
+  );
 }
 
 let cachedUrl = null;
@@ -107,6 +114,9 @@ function upstreamUrl() {
 
 /** Session id assigned by the upstream server, if it uses one. */
 let sessionId = null;
+
+/** Protocol version negotiated with the upstream during initialize. */
+let protocolVersion = null;
 
 function send(message) {
   process.stdout.write(`${JSON.stringify(message)}\n`);
@@ -161,6 +171,7 @@ async function forward(request) {
     Accept: 'application/json, text/event-stream',
   };
   if (sessionId) headers['mcp-session-id'] = sessionId;
+  if (protocolVersion) headers['MCP-Protocol-Version'] = protocolVersion;
 
   let res;
   try {
@@ -198,6 +209,11 @@ async function forward(request) {
   }
 
   for (const message of parseBody(res.headers.get('Content-Type') || '', text)) {
+    // Remember the protocol version the upstream agreed to during initialize
+    // so every subsequent request can carry the MCP-Protocol-Version header.
+    if (message?.result?.protocolVersion && !protocolVersion) {
+      protocolVersion = message.result.protocolVersion;
+    }
     send(message);
   }
 }
@@ -206,6 +222,18 @@ const queue = [];
 let draining = false;
 let stdinClosed = false;
 
+/**
+ * Hand any in-flight writes to the OS pipe before exiting, so the final
+ * response is not truncated on buffered / slow consumers.
+ */
+function flushStdoutThenExit() {
+  if (!process.stdout.write('')) {
+    process.stdout.once('drain', () => process.exit(0));
+  } else {
+    process.exit(0);
+  }
+}
+
 async function drain() {
   if (draining) return;
   draining = true;
@@ -213,7 +241,7 @@ async function drain() {
     await forward(queue.shift());
   }
   draining = false;
-  if (stdinClosed) process.exit(0);
+  if (stdinClosed) flushStdoutThenExit();
 }
 
 const rl = createInterface({ input: process.stdin });
@@ -232,5 +260,5 @@ rl.on('line', (line) => {
 });
 rl.on('close', () => {
   stdinClosed = true;
-  if (!draining && queue.length === 0) process.exit(0);
+  if (!draining && queue.length === 0) flushStdoutThenExit();
 });
