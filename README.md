@@ -4,6 +4,8 @@
 和 1 个官方文档检索 MCP。Plugin 同时在 WorkBuddy 与 Ducc 客户端完成兼容性验证，
 不绑定特定 Agent。
 
+### 插件本体（推送到 WorkBuddy 市场）
+
 ```text
 workbuddy-agent-plugin/
 ├── connector-meta.json        # 插件市场元信息（WorkBuddy 市场使用）
@@ -11,20 +13,27 @@ workbuddy-agent-plugin/
 ├── icon.png
 ├── bin/
 │   └── docs-mcp-proxy.mjs     # baidu-maps-docs stdio → Streamable HTTP 代理
-├── skills/
-│   ├── bmap-cli/              # CLI 自举、登录、AK/SK、样式、配额、消费量
-│   ├── baidu-ai-map/          # 直接回答地点、路线、地址、天气
-│   ├── baidu-map-jsapi-gl/    # 编写/审查 BMapGL 浏览器前端代码
-│   └── baidu-map-webapi/      # 编写/审查服务端 WebAPI 调用代码
-├── tests/                     # 补充测试（Phase 7-10）
-│   └── test-proxy-supplementary.mjs
-├── demo/                      # 综合地图 demo + 验证脚本
-│   ├── map-demo.html
-│   ├── verify-demo.mjs
-│   ├── run-chrome.sh
-│   └── screenshot.png
-└── TEST_REPORT.md             # 63/63 全部通过的完整测试报告
+└── skills/
+    ├── bmap-cli/              # CLI 自举、登录、AK/SK、样式、配额、消费量
+    ├── baidu-ai-map/          # 直接回答地点、路线、地址、天气
+    ├── baidu-map-jsapi-gl/    # 编写/审查 BMapGL 浏览器前端代码
+    └── baidu-map-webapi/      # 编写/审查服务端 WebAPI 调用代码
 ```
+
+### 本地开发资源（仅维护者本地参考，不随插件发布）
+
+```text
+workbuddy-agent-plugin/        # 同上，仅追加以下三项
+├── tests/                     # 补充测试脚本（不发布）
+├── demo/                      # 综合地图 demo + 验证脚本（不发布）
+└── TEST_REPORT.md             # 完整测试报告（不发布）
+```
+
+`tests/`、`demo/`、`TEST_REPORT.md` 是本插件维护过程中在本地积累的测试与演示资源，
+用于辅助验证 `bin/docs-mcp-proxy.mjs` 的修复与 skill 的代码组织示例。**它们不是
+Claude Code Plugin 规范的组成部分，不应被客户端加载，也不会随插件一起推送到
+WorkBuddy 市场。** 如果你从 GitHub 克隆本仓库后想复现测试，可保留这些目录；如果你
+只想使用插件本身，可以直接删除它们而不影响功能。
 
 Plugin 使用 Claude Code 的根 `mcp.json` + `skills/` 目录结构，不含
 `.codex-plugin/`、`.claude-plugin/` 等其他规范兼容清单。
@@ -163,24 +172,31 @@ CLI 读取登录态并解析可用 AK。当前 MCP 规范没有可移植的 secr
 
 ## 校验与测试
 
-详细报告见 [TEST_REPORT.md](TEST_REPORT.md)。摘要：**63/63 全部通过**。
+详细报告见 [TEST_REPORT.md](TEST_REPORT.md)（**本地参考，不随插件发布**）。
 
-| 套件 | Case | 通过 | 覆盖 |
-|---|---|---|---|
-| 原版（已 commit） | 28 | 28 | Fix 1-4 回归 + 18 个查询 + 10 个负例 |
-| 补充 Phase 7 | 10 | 10 | bmap-cli 真实 CLI（version/ak/ap/user/quota/consume/style） |
-| 补充 Phase 8 | 4 | 4 | 上游 503/502/401/notification@500 错误处理 |
-| 补充 Phase 9 | 3 | 3 | SSE 多帧 / `[DONE]` / 损坏帧 |
-| 补充 Phase 10 | 1 | 1 | 真上游 30 个串行 tools/call |
-| Demo 验证 | 17 + 1 | 17 + 1 | HTML 结构 + JS 语法 + 关键 API + WebAPI 真实数据 + Chrome 渲染 |
+| 套件 | Case | 覆盖 |
+|---|---|---|
+| 原版（已 commit） | 28 | Fix 1-4 回归 + 18 个查询 + 10 个负例 |
+| 补充 Phase 7 | 10 | bmap-cli 真实 CLI（version/ak/ap/user/quota/consume/style） |
+| 补充 Phase 8 | 4 | 上游 503/502/401/notification@500 错误处理 |
+| 补充 Phase 9 | 3 | SSE 多帧 / `[DONE]` / 损坏帧 |
+| 补充 Phase 10 | 1 | 真上游 30 个串行 tools/call |
+| 补充 Phase 11 | 5 | 真 bmap-cli banner 格式（binary audit + 3 个 fixture） |
+| Demo 验证 | 17 + 1 | HTML 结构 + JS 语法 + 关键 API + WebAPI 真实数据 + Chrome 渲染 |
+
+> 上表数字与 [TEST_REPORT.md](TEST_REPORT.md) 第 3 节测试矩阵一致。最终通过情况以
+> 报告结论为准。`tests/` 与 `demo/` 是本地验证脚本，市场分发版本中**不包含**这些
+> 文件；如需复现，需额外从维护者处获取或在本地重新生成。
 
 ### 复现命令
+
+> 以下命令均在本仓库根目录执行，且要求 `tests/`、`demo/` 已在本地。
 
 ```bash
 # 静态校验 mcp.json
 node -e 'JSON.parse(require("fs").readFileSync("mcp.json"))'
 
-# 补充测试（18 个 case）
+# 补充测试（含 Phase 7-11）
 node tests/test-proxy-supplementary.mjs
 
 # 压测规模可调
@@ -194,8 +210,8 @@ bash demo/run-chrome.sh
 ```
 
 依赖：Node.js ≥ 18（内置 fetch + node:http）、macOS / Linux、Google Chrome（仅
-demo 用）。原版 28 个 case 需 `/tmp/test-proxy.mjs`，现已在
-`workbuddy-agent-plugin/` 内完整覆盖并可独立复现。
+demo 用）。原版 28 个 case 的脚本 `/tmp/test-proxy.mjs` 是早期一次性脚本，未纳入
+仓库；如需复现可联系维护者。
 
 ## MCP 代理
 
@@ -224,6 +240,10 @@ printf '%s\n%s\n%s\n' \
 
 ## 演示
 
+> 本节引用 [demo/map-demo.html](demo/map-demo.html) 作为代码组织示例。该文件在
+> 仓库内供维护者参考，不随插件发布。如果你已经从 GitHub 克隆了仓库可直接查看，
+> 否则可联系维护者获取。
+
 [demo/map-demo.html](demo/map-demo.html) 是一个综合地图 demo，覆盖：
 
 - **POI 检索**：调 `BMapGL.LocalSearch`
@@ -250,6 +270,6 @@ bash demo/run-chrome.sh
 | 场景 | 影响 | 计划 |
 |---|---|---|
 | `fetch` 没有 timeout | 真上游卡死时 proxy 挂起到 SIGKILL | ⏳ 加 `AbortController + 10s 超时` |
-| 真 bmap-cli 升级 banner 真实格式 | 测试用 mock，真实格式可能不同 | ⏳ `strings` 二进制或真触发升级抓样本 |
 | `get_docs` 参数名 `names` 只接受单字符串 | 文档未说明，需从 `isError` 反推 | ⏳ SKILL.md 补充说明 |
 | 服务端 AK 仅 IP 白名单（`0.0.0.0/0`） | 无浏览器端 AK 时无法直接跑 JSAPI | ⏳ 文档补充创建浏览器端 AK 步骤 |
+| proxy 第一条 banner 检测是中文关键字 | 英文 banner + stdout 污染双重场景会漏判 | ⏳ 改为 i18n 正则 `/(?:发现新版本\|new version\|update available)/i` |
