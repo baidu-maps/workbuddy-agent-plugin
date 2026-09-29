@@ -4,11 +4,11 @@
 和 1 个官方文档检索 MCP。Plugin 同时在 WorkBuddy 与 Ducc 客户端完成兼容性验证，
 不绑定特定 Agent。
 
-### 插件本体（推送到 WorkBuddy 市场）
+## 目录结构
 
 ```text
 workbuddy-agent-plugin/
-├── connector-meta.json        # 插件市场元信息（WorkBuddy 市场使用）
+├── connector-meta.json        # WorkBuddy 市场元信息（不属于 Plugin 本体）
 ├── mcp.json                   # stdio MCP 注册（baidu-maps-docs）
 ├── icon.png
 ├── bin/
@@ -20,23 +20,8 @@ workbuddy-agent-plugin/
     └── baidu-map-webapi/      # 编写/审查服务端 WebAPI 调用代码
 ```
 
-### 本地开发资源（仅维护者本地参考，不随插件发布）
-
-```text
-workbuddy-agent-plugin/        # 同上，仅追加以下三项
-├── tests/                     # 补充测试脚本（不发布）
-├── demo/                      # 综合地图 demo + 验证脚本（不发布）
-└── TEST_REPORT.md             # 完整测试报告（不发布）
-```
-
-`tests/`、`demo/`、`TEST_REPORT.md` 是本插件维护过程中在本地积累的测试与演示资源，
-用于辅助验证 `bin/docs-mcp-proxy.mjs` 的修复与 skill 的代码组织示例。**它们不是
-Claude Code Plugin 规范的组成部分，不应被客户端加载，也不会随插件一起推送到
-WorkBuddy 市场。** 如果你从 GitHub 克隆本仓库后想复现测试，可保留这些目录；如果你
-只想使用插件本身，可以直接删除它们而不影响功能。
-
-Plugin 使用 Claude Code 的根 `mcp.json` + `skills/` 目录结构，不含
-`.codex-plugin/`、`.claude-plugin/` 等其他规范兼容清单。
+Plugin 使用根 `mcp.json` + `skills/` 目录结构，不含 `.claude-plugin/plugin.json`、
+`.codex-plugin/` 等清单文件。
 
 ## 客户端兼容性
 
@@ -62,9 +47,6 @@ Plugin 规范不限定具体 Agent 客户端。任何完整支持 Claude Code Pl
 ```bash
 claude --plugin-dir /absolute/path/to/workbuddy-agent-plugin
 ```
-
-或把目录软链接到 `~/.claude/plugins/workbuddy-agent-plugin` 后让 Claude Code
-自动发现。
 
 ### 在 WorkBuddy 中
 
@@ -118,10 +100,10 @@ Plugin 加载后，应能在新会话中看到以下 4 个 Skill 自动注册：
 
 ## 更新和卸载
 
-Claude Code Plugin 是只读快照：修改 `skills/` 或 `mcp.json` 后需要重新启动
-客户端才会生效，不需要重新"安装"。
+修改 `skills/` 或 `mcp.json` 后，新开会话（Claude Code 中也可执行 `/reload-plugins`）
+即可生效，不需要重新"安装"。
 
-卸载 Plugin：移除客户端配置中的 plugin 目录或软链接即可，无需清理 MCP 注册
+卸载 Plugin：去掉 `--plugin-dir` 参数，或在对应客户端的插件管理中移除即可，无需清理 MCP 注册
 （MCP 生命周期与 Plugin 绑定）。
 
 ## 组件职责
@@ -170,49 +152,6 @@ Claude Code / Ducc 在启动 Plugin stdio MCP 时会过滤任意宿主环境变�
 CLI 读取登录态并解析可用 AK。当前 MCP 规范没有可移植的 secret reference 字段，
 不能把凭据写入可见的 `mcp.json` `env` 或 `headers`。
 
-## 校验与测试
-
-详细报告见 [TEST_REPORT.md](TEST_REPORT.md)（**本地参考，不随插件发布**）。
-
-| 套件 | Case | 覆盖 |
-|---|---|---|
-| 原版（已 commit） | 28 | Fix 1-4 回归 + 18 个查询 + 10 个负例 |
-| 补充 Phase 7 | 10 | bmap-cli 真实 CLI（version/ak/ap/user/quota/consume/style） |
-| 补充 Phase 8 | 4 | 上游 503/502/401/notification@500 错误处理 |
-| 补充 Phase 9 | 3 | SSE 多帧 / `[DONE]` / 损坏帧 |
-| 补充 Phase 10 | 1 | 真上游 30 个串行 tools/call |
-| 补充 Phase 11 | 5 | 真 bmap-cli banner 格式（binary audit + 3 个 fixture） |
-| Demo 验证 | 17 + 1 | HTML 结构 + JS 语法 + 关键 API + WebAPI 真实数据 + Chrome 渲染 |
-
-> 上表数字与 [TEST_REPORT.md](TEST_REPORT.md) 第 3 节测试矩阵一致。最终通过情况以
-> 报告结论为准。`tests/` 与 `demo/` 是本地验证脚本，市场分发版本中**不包含**这些
-> 文件；如需复现，需额外从维护者处获取或在本地重新生成。
-
-### 复现命令
-
-> 以下命令均在本仓库根目录执行，且要求 `tests/`、`demo/` 已在本地。
-
-```bash
-# 静态校验 mcp.json
-node -e 'JSON.parse(require("fs").readFileSync("mcp.json"))'
-
-# 补充测试（含 Phase 7-11）
-node tests/test-proxy-supplementary.mjs
-
-# 压测规模可调
-LOAD_N=100 node tests/test-proxy-supplementary.mjs
-
-# Demo 静态验证（17 个 case）
-node demo/verify-demo.mjs
-
-# Demo 真实浏览器渲染（截图 + 检查 console）
-bash demo/run-chrome.sh
-```
-
-依赖：Node.js ≥ 18（内置 fetch + node:http）、macOS / Linux、Google Chrome（仅
-demo 用）。原版 28 个 case 的脚本 `/tmp/test-proxy.mjs` 是早期一次性脚本，未纳入
-仓库；如需复现可联系维护者。
-
 ## MCP 代理
 
 `bin/docs-mcp-proxy.mjs` 需要 Node.js 18+。它按
@@ -235,41 +174,12 @@ printf '%s\n%s\n%s\n' \
 - **AK 解析顺序**：`BAIDU_MAPS_DOCS_AK` > `BMAP_AK` > `bmap-cli ak list` 的服务端 AK
 - **协议协商**：首次 `initialize` 后回填 `mcp-session-id` 和 `MCP-Protocol-Version` 头
 - **SSE / JSON 双解析**：支持 `text/event-stream` 分帧与单 JSON 响应
-- **5xx 透传**：上游错误转为 `error.code=-32603`，message 含 HTTP 状态码
+- **错误转换**：上游非 2xx 响应转为 `error.code=-32603`，message 含 HTTP 状态码
 - **退出前 flush**：所有响应写完后再 `process.exit(0)`，避免截断
-
-## 演示
-
-> 本节引用 [demo/map-demo.html](demo/map-demo.html) 作为代码组织示例。该文件在
-> 仓库内供维护者参考，不随插件发布。如果你已经从 GitHub 克隆了仓库可直接查看，
-> 否则可联系维护者获取。
-
-[demo/map-demo.html](demo/map-demo.html) 是一个综合地图 demo，覆盖：
-
-- **POI 检索**：调 `BMapGL.LocalSearch`
-- **驾车路线规划**：调 `BMapGL.DrivingRoute` + `BMapGL.Geocoder`（6 种策略）
-- **个性化地图样式**：5 种预设（default / dark / light / hide-poi / fresh）通过
-  `map.setMapStyleV2({ styleJson: [...] })` 切换
-
-打开方式：
-
-```bash
-# 替换占位 AK 后用浏览器打开
-$EDITOR demo/map-demo.html   # 把 <浏览器端AK> 换成真实浏览器端 AK
-open demo/map-demo.html      # macOS
-
-# 或在 headless Chrome 截图验证
-bash demo/run-chrome.sh
-# 输出: demo/screenshot.png
-```
-
-无浏览器端 AK 时页面会进入 fallback 模式（不白屏），并通过状态条说明原因。
 
 ## 已知限制
 
 | 场景 | 影响 | 计划 |
 |---|---|---|
 | `fetch` 没有 timeout | 真上游卡死时 proxy 挂起到 SIGKILL | ⏳ 加 `AbortController + 10s 超时` |
-| `get_docs` 参数名 `names` 只接受单字符串 | 文档未说明，需从 `isError` 反推 | ⏳ SKILL.md 补充说明 |
-| 服务端 AK 仅 IP 白名单（`0.0.0.0/0`） | 无浏览器端 AK 时无法直接跑 JSAPI | ⏳ 文档补充创建浏览器端 AK 步骤 |
 | proxy 第一条 banner 检测是中文关键字 | 英文 banner + stdout 污染双重场景会漏判 | ⏳ 改为 i18n 正则 `/(?:发现新版本\|new version\|update available)/i` |
