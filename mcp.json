@@ -1,9 +1,8 @@
 {
   "mcpServers": {
-    "baidu-maps-docs": {
-      "type": "stdio",
-      "command": "node",
-      "args": ["${CLAUDE_PLUGIN_ROOT}/bin/docs-mcp-proxy.mjs"],
+    "baidu-map": {
+      "type": "streamableHttp",
+      "url": "https://mcp.map.baidu.com/mcp?ak=${BAIDU_MAP_AK}",
       "timeout": 30000
     }
   }

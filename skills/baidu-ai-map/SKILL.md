@@ -1,6 +1,6 @@
 ---
 name: baidu-ai-map
-description: 使用百度地图 Agent Plan 直接完成普通或复杂的地理任务，包括语义化地点检索、路线规划、地理编码与逆地理编码、天气查询。用户要的是地点、路线、地址或天气答案时默认优先使用；无需开发者账户或 AK。不用于生成地图调用代码、纯官方文档查询，也不用于登录、AK、样式、配额等账户资源管理。
+description: 使用百度地图 Agent Plan 直接完成普通或复杂的地理任务，包括语义化地点检索、路线规划、地理编码与逆地理编码、天气查询。仅在已配置环境变量 BAIDU_MAP_AUTH_TOKEN，或本连接器的 baidu-map MCP 工具（map_*）无法满足需求时使用；普通地点、路线、地址、天气问题默认使用 baidu-map。不用于生成地图调用代码、纯官方文档查询，也不用于登录、AK、样式、配额等账户资源管理。
 license: MIT
 metadata:
   openclaw.primaryEnv: BAIDU_MAP_AUTH_TOKEN
@@ -21,14 +21,14 @@ metadata:
 | 产出 | **地理问题的答案** | **可交付的代码** |
 | 入参 | 用户原话（`user_raw_request`） | 结构化参数、坐标、UID |
 
-**适用**：用户想直接知道「附近有什么」「怎么走」「这个坐标是哪」「天气如何」。无论问题简单还是复杂，都默认优先使用本 skill。
+**适用**：用户想直接知道「附近有什么」「怎么走」「这个坐标是哪」「天气如何」。本连接器已通过 `baidu-map` MCP 工具（`map_*`）提供这些能力，默认优先使用 `baidu-map`；仅当已配置 `BAIDU_MAP_AUTH_TOKEN`，或 `map_*` 工具无法满足需求时才使用本 skill。
 
 **不适用**：
 
 - 用户要能运行的 HTML / 前端代码：使用 `baidu-map-jsapi-gl`。
 - 用户要服务端 API 调用代码：使用 `baidu-map-webapi`。
-- 用户明确询问官方接口参数、字段、限制或版本定义：使用 `baidu-maps-docs` MCP。
-- 用户要登录、AK、样式、配额或账户资源管理：使用 `bmap-cli`。
+- 用户明确询问官方接口参数、字段、限制或版本定义：说明需以百度地图开放平台官方文档为准，不凭记忆作答。
+- 用户要登录、AK、样式、配额或账户资源管理：引导用户前往[百度地图开放平台控制台](https://lbsyun.baidu.com/apiconsole/key)自行操作。
 
 > **禁止在本 skill 中触发 AK 流程**：不执行 `ak list`、不创建 AK、不询问 AK 类型。误入凭据申请流程会毁掉本 skill 零配置的价值。
 
@@ -45,16 +45,7 @@ metadata:
 SK（Service Key）是调用所有 API 的必须凭证，按以下顺序获取：
 
 1. 读取环境变量 `BAIDU_MAP_AUTH_TOKEN`，有值则直接使用。
-2. 无值则触发同 plugin 的 **`bmap-cli` skill**，由它完成 CLI 自举与登录，然后执行：
-
-   ```bash
-   "$BMAP_CLI" ap list
-   ```
-
-   从输出的 `data.api_key` 取得 SK。**该输出含明文 SK，禁止整段回显给用户**；仅在需要说明时按「前 4 位 + `****` + 后 4 位」遮掩陈述。
-
-3. `ap list` 返回空列表时，须先向用户说明并征得同意，再执行 `"$BMAP_CLI" ap create`。**列表非空时严禁执行 `ap create`**——它是重置语义，会立即作废所有在用 SK。
-4. 若 `bmap-cli` skill 不可用，提示用户前往 [百度地图 Agent Plan](https://lbs.baidu.com/apiconsole/agentplan) 申请 SK 并自行设置环境变量：
+2. 无值时，提示用户前往 [百度地图 Agent Plan](https://lbs.baidu.com/apiconsole/agentplan) 申请 SK 并自行设置环境变量。SK 属于明文凭据，禁止整段回显给用户；仅在需要说明时按「前 4 位 + `****` + 后 4 位」遮掩陈述：
 
 ```bash
 export BAIDU_MAP_AUTH_TOKEN="你的SK"
@@ -94,7 +85,7 @@ curl --get "https://api.map.baidu.com/agent_plan/v1/place" \
 3. 使用 `curl --get` 与 `--data-urlencode` 发起请求，凭据只放在 Authorization Header，不放进 URL、日志或最终回答。
 4. 直接解析完整 JSON 响应；不要用文本正则裁剪响应后猜测字段。
 5. 结果有歧义时先利用响应候选和用户上下文消歧，仍无法唯一确定再询问用户。
-6. API 返回参数错误时，重新读取对应 reference；涉及精确字段、限制或最新定义时改查 `baidu-maps-docs` MCP，不凭记忆补齐。
+6. API 返回参数错误时，重新读取对应 reference；涉及精确字段、限制或最新定义时以官方文档为准，不凭记忆补齐。
 
 ## API 索引
 

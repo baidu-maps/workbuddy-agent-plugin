@@ -21,7 +21,7 @@
 | province | string |  | - | 省份名称，用于辅助名称查询。 | 山东省 |
 | city | string |  | - | 城市名称，用于辅助名称查询。 | 济南市 |
 | district | string |  | - | 区县名称，用于名称查询，与 district_id、location 三者必填其一。 | 历下区 |
-| ak | string | T | - | 开发者密钥，在API控制台申请获得。 | hhR4GDGHfREwblbolOYhio8HkHyRdDoq |
+| ak | string | T | - | 开发者密钥，在API控制台申请获得。 | `$BMAP_WEBAPI_AK` |
 | data_type | string (enum: now, fc, index, alert, fc_hour...) | T | - | 请求数据类型，控制返回内容。可选值：now(实时天气)、fc(7天预报)、index(生活指数)、alert(气象预警)、fc_hour(逐小时预报)、all(全部)。 | all |
 | output | string (enum: json, xml) |  | json | 返回格式，支持 json/xml，默认为 json。 | json |
 | coordtype | string (enum: wgs84, bd09ll, bd09mc, gcj02) |  | wgs84 | 坐标类型。支持 wgs84/bd09ll/bd09mc/gcj02，默认为 wgs84。 | wgs84 |

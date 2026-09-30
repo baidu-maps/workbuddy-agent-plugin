@@ -9,13 +9,13 @@ metadata:
 
 # WebAPI 开发指南
 
-本 skill 只组织可交付的服务端 WebAPI 代码。直接回答地点、路线、地址或天气结果时改用 `baidu-ai-map`；浏览器地图代码使用 `baidu-map-jsapi-gl`；账户资源由 `bmap-cli` 管理。
+本 skill 只组织可交付的服务端 WebAPI 代码。直接回答地点、路线、地址或天气结果时改用 `baidu-map`（本连接器 MCP 工具）；浏览器地图代码使用 `baidu-map-jsapi-gl`。
 
 ## 工作流
 
 1. 先判断任务是多步业务流程还是单接口集成。
 2. 多步流程读取下方对应 recipe；单接口任务只读取对应 API reference，避免加载无关资料。
-3. 本地 reference 缺失，或涉及精确参数、返回字段、限制、错误码、版本差异和最新定义时，使用同 plugin 的 `baidu-maps-docs` MCP：先 `list_docs`，再对命中文档调用 `get_docs`。
+3. 本地 reference 未覆盖的精确参数、返回字段、限制、错误码或版本差异，明确告知用户需以百度地图开放平台官方文档为准。
 4. 获取服务端 AK，按用户项目语言和已有结构编写调用代码。所有用户输入都用客户端的查询参数编码能力处理，不手工拼接未转义参数。
 5. 交付前检查端点、AK 类型、坐标顺序/坐标系、必填参数、错误处理和凭据泄漏风险。不得用未经核实的记忆补齐精确字段。
 
@@ -35,14 +35,13 @@ metadata:
 AK（Access Key）是使用技能之前的必须参数，需要**服务端 AK**：
 
 1. 优先读取环境变量 `BMAP_WEBAPI_AK` 中的 AK。
-2. 无值时，转由同 plugin 的 **`bmap-cli` skill** 取得服务端 AK（`ak list`）；**不要**直接提示用户去网页申请，也不要复用浏览器端 AK。
-3. 仅当 `bmap-cli` skill 不可用时，才提示用户：**请先前往[百度地图开放平台](https://lbs.baidu.com/apiconsole/key)申请 `服务端` 的 AK**，并设置环境变量：
+2. 无值时，提示用户：**请先前往[百度地图开放平台](https://lbs.baidu.com/apiconsole/key)申请 `服务端` 的 AK**，并设置环境变量；不要复用浏览器端 AK：
 
 ```bash
 export BMAP_WEBAPI_AK="百度地图AK"
 ```
 
-4. 示例与命令使用 `$BMAP_WEBAPI_AK`，不得把真实 AK 写入仓库、日志或最终回答：
+3. 示例与命令使用 `$BMAP_WEBAPI_AK`，不得把真实 AK 写入仓库、日志或最终回答：
 
 ```bash
 curl "https://api.map.baidu.com/place/v3/region?query=美食&region=北京&ak=$BMAP_WEBAPI_AK"

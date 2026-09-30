@@ -12,7 +12,7 @@ metadata:
 
 ## 边界与版本
 
-- 本 skill 只负责浏览器前端代码。直接获取地点、路线、地址或天气答案时使用 `baidu-ai-map`；服务端调用代码使用 `baidu-map-webapi`；登录与资源管理使用 `bmap-cli`。
+- 本 skill 只负责浏览器前端代码。直接获取地点、路线、地址或天气答案时使用 `baidu-map`（本连接器 MCP 工具）；服务端调用代码使用 `baidu-map-webapi`。
 - 默认使用 BMapGL：加载 `https://api.map.baidu.com/api?v=1.0&type=webgl&...`，命名空间为 `BMapGL`。
 - 仅当用户明确要求 JSAPI 3.0，或现有项目已经使用 3.0 时，才沿用 `BMapJS`。不得在同一实现中混用 `BMapGL` 与 `BMapJS`。
 
@@ -21,8 +21,8 @@ metadata:
 本 skill 需要**浏览器端 AK**：
 
 1. 优先读取环境变量 `BMAP_JSAPI_KEY`。
-2. 无值时，转由同 plugin 的 **`bmap-cli` skill** 获取浏览器端 AK，**不要**自行编造或复用服务端 AK。
-3. 需要个性化底图样式时，`style_id` 同样只能来自 `bmap-cli` 的 `style list` / `style create` 原始输出。
+2. 无值时，按 `references/get-ak.md` 引导用户在控制台创建浏览器端 AK，**不要**自行编造或复用服务端 AK。
+3. 需要个性化底图样式时，`style_id` 只能由用户在开放平台控制台创建后提供，不得猜测。
 
 若用户只要求审查代码、解释 API 或提供不执行的结构示例，且任务不需要真实运行，不要为了填充示例而创建 AK。交付可运行页面时不得写入假 AK 或遮掩后的 AK。
 
@@ -89,8 +89,7 @@ metadata:
 ## 文档使用顺序
 
 1. 常用且稳定的实现模式先读取上面的本地 `references/` 文件。
-2. 本地 reference 缺失，或用户询问精确参数、返回字段、限制、错误码、版本差异和最新定义时，使用同 plugin 的 `baidu-maps-docs` MCP：先 `list_docs`，再对命中文档调用 `get_docs`。
-3. Skill 决定实现流程和代码组织；MCP 提供官方事实。不得用未经核实的记忆补齐精确字段。
+2. 本地 reference 未覆盖的精确参数、返回字段、限制、错误码或版本差异，明确告知用户需以百度地图开放平台官方文档为准。不得用未经核实的记忆补齐精确字段。
 
 参考文件路径相对于本 `SKILL.md`：
 

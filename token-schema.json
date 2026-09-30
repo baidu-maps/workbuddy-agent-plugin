@@ -1,0 +1,22 @@
+{
+  "title": "百度地图 AK 配置",
+  "title_en": "Baidu Maps AK Configuration",
+  "description": "连接你的百度地图开放平台 AK,用于地点检索、路线规划、地址正逆解析、天气查询等。凭证仅存储在本机 ~/.workbuddy 目录下,不会上传云端。",
+  "description_en": "Connect your Baidu Maps Open Platform AK to enable place search, route planning, geocoding and weather. The credential is stored locally under ~/.workbuddy only and is never uploaded.",
+  "docUrl": "https://lbsyun.baidu.com/apiconsole/key",
+  "docLabel": "如何获取百度地图 AK?",
+  "docLabel_en": "How to get a Baidu Maps AK?",
+  "fields": [
+    {
+      "key": "BAIDU_MAP_AK",
+      "label": "AK",
+      "label_en": "AK",
+      "type": "password",
+      "required": true,
+      "placeholder": "在百度地图开放平台控制台创建「服务器端」类型的 AK",
+      "placeholder_en": "Create a server-side AK in the Baidu Maps Open Platform console",
+      "description": "须为「服务器端」类型;浏览器端 AK 会因 Referer 校验被拒。",
+      "description_en": "Must be a server-side AK; browser-side AKs are rejected by Referer checks."
+    }
+  ]
+}
