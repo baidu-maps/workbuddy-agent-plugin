@@ -3,6 +3,7 @@
   "name_en": "Baidu Maps",
   "description_zh": "接入百度地图位置服务:地点检索与详情、路线规划(驾车/骑行/步行/公交)、批量算路、地址正逆解析、实时路况、天气查询、行政区划与地图调起;同时提供 BMapGL 前端与 WebAPI 服务端的开发指引。",
   "description": "Baidu Maps location services: place search, route planning, geocoding, live traffic and weather, plus BMapGL and WebAPI development guides.",
+  "description_en": "Baidu Maps location services: place search, route planning, geocoding, live traffic and weather, plus BMapGL and WebAPI development guides.",
   "source": "baidu-map",
   "type": "mcp",
   "version": "2.0.0",
